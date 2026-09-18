@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registre des applications</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1B2430;
+    --ink-soft: #2A3547;
+    --paper: #F2ECE0;
+    --paper-dim: #E7DFCC;
+    --brass: #A97429;
+    --brass-bright: #C68A34;
+    --teal: #3E6259;
+    --line: rgba(27, 36, 48, 0.14);
+    --text: #211F1A;
+    --text-muted: #5B5646;
+    --bg: var(--ink);
+    --surface: var(--paper);
+    --surface-alt: var(--paper-dim);
+    --fg: var(--paper);
+    --fg-on-paper: var(--text);
+    --fg-muted-on-paper: var(--text-muted);
+    --accent: var(--brass-bright);
+    --rule: var(--line);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14191F;
+      --surface: #1E2A2E;
+      --surface-alt: #24312F;
+      --fg: #EDE6D6;
+      --fg-on-paper: #EDE6D6;
+      --fg-muted-on-paper: #B9AF98;
+      --accent: #D89B45;
+      --rule: rgba(237, 230, 214, 0.16);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #14191F;
+    --surface: #1E2A2E;
+    --surface-alt: #24312F;
+    --fg: #EDE6D6;
+    --fg-on-paper: #EDE6D6;
+    --fg-muted-on-paper: #B9AF98;
+    --accent: #D89B45;
+    --rule: rgba(237, 230, 214, 0.16);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 20px 64px;
+  }
+
+  .sheet {
+    width: 100%;
+    max-width: 620px;
+    background: var(--surface);
+    border-radius: 3px;
+    padding: 44px 36px 24px;
+    box-shadow: 0 40px 80px -30px rgba(0,0,0,0.5);
+  }
+
+  header {
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 28px;
+    margin-bottom: 6px;
+  }
+
+  .kicker {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    margin: 0 0 10px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(30px, 6vw, 40px);
+    line-height: 1.12;
+    margin: 0 0 12px;
+    color: var(--fg-on-paper);
+    font-optical-sizing: auto;
+  }
+
+  header p {
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--fg-muted-on-paper);
+    margin: 0;
+    max-width: 46ch;
+  }
+
+  .register {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .entry {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    padding: 26px 0;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+  }
+
+  .entry:last-child { border-bottom: none; }
+
+  .entry-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 6px;
+  }
+
+  .entry-name {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--fg-on-paper);
+    transition: color 0.15s ease;
+  }
+
+  .entry:hover .entry-name,
+  .entry:focus-visible .entry-name {
+    color: var(--accent);
+  }
+
+  .entry-go {
+    font-size: 13px;
+    color: var(--fg-muted-on-paper);
+    white-space: nowrap;
+    opacity: 0.75;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  .entry:hover .entry-go,
+  .entry:focus-visible .entry-go {
+    opacity: 1;
+    transform: translateX(3px);
+    color: var(--accent);
+  }
+
+  .entry-desc {
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: var(--fg-muted-on-paper);
+    max-width: 50ch;
+    margin: 0 0 10px;
+  }
+
+  .entry-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--fg-muted-on-paper);
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+    flex-shrink: 0;
+  }
+
+  .host {
+    font-family: 'Inter', monospace;
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    letter-spacing: -0.01em;
+  }
+
+  .entry:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+
+  footer {
+    margin-top: 28px;
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--fg-muted-on-paper);
+    opacity: 0.7;
+  }
+
+  @media (max-width: 480px) {
+    .sheet { padding: 32px 22px 18px; }
+    .entry-top { flex-direction: column; align-items: flex-start; gap: 2px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .entry-name, .entry-go { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="sheet">
+    <header>
+      <p class="kicker">Accès rapide</p>
+      <h1>Les applications</h1>
+      <p>Un seul endroit pour retrouver les outils gérés pour l'association.</p>
+    </header>
+
+    <ul class="register">
+      <li>
+        <a class="entry" href="https://federaux-2028-production.up.railway.app/" target="_blank" rel="noopener">
+          <div class="entry-top">
+            <span class="entry-name">Dole 2028</span>
+            <span class="entry-go">Ouvrir →</span>
+          </div>
+          <p class="entry-desc">Gestion de la manifestation FSCF : participants, bénévoles, programme, badges et contrôle d'accès.</p>
+          <div class="entry-meta">
+            <span class="dot"></span>
+            <span class="host">federaux-2028-production.up.railway.app</span>
+          </div>
+        </a>
+      </li>
+
+      <li>
+        <a class="entry" href="https://eric39100.pythonanywhere.com/" target="_blank" rel="noopener">
+          <div class="entry-top">
+            <span class="entry-name">Buvette &amp; Snacking</span>
+            <span class="entry-go">Ouvrir →</span>
+          </div>
+          <p class="entry-desc">Catalogue boissons et snacks, sélection par compétition, commande fournisseur et suivi de stock.</p>
+          <div class="entry-meta">
+            <span class="dot"></span>
+            <span class="host">eric39100.pythonanywhere.com</span>
+          </div>
+        </a>
+      </li>
+
+      <li>
+        <a class="entry" href="https://note-de-frais-production-e133.up.railway.app/" target="_blank" rel="noopener">
+          <div class="entry-top">
+            <span class="entry-name">Notes de frais</span>
+            <span class="entry-go">Ouvrir →</span>
+          </div>
+          <p class="entry-desc">Soumission des justificatifs avec lecture automatique du montant, validation par le trésorier.</p>
+          <div class="entry-meta">
+            <span class="dot"></span>
+            <span class="host">note-de-frais-production-e133.up.railway.app</span>
+          </div>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <footer>Page personnelle — ajoute-la à l'écran d'accueil pour un accès en un geste.</footer>
+
+</body>
+</html>
