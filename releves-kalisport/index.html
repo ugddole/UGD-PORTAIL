@@ -1,0 +1,1125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>Relevés vers Kalisport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Mise en page : une colonne d'atelier — imports côte à côte, puis le grand livre de revue, puis l'export */
+:root {
+  --bg: #f3f5f7;
+  --surface: #ffffff;
+  --sunk: #e9edf1;
+  --line: #d5dce3;
+  --fg: #16212e;
+  --muted: #5b6878;
+  --accent: #0d6b6b;
+  --accent-ink: #ffffff;
+  --accent-soft: #d8ecea;
+  --credit: #1d7447;
+  --debit: #b0281f;
+  --warn: #9a5c00;
+  --warn-soft: #fbecd2;
+  --ok-soft: #e1efe6;
+  --info-soft: #e3e9f4;
+  --info: #2d4f8a;
+  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e141b; --surface: #151d27; --sunk: #1c2632; --line: #2b3746; --fg: #e4e9ef; --muted: #96a3b3;
+    --accent: #4db3ab; --accent-ink: #062120; --accent-soft: #163735; --credit: #62c891; --debit: #f08b81;
+    --warn: #e5b357; --warn-soft: #3a2c12; --ok-soft: #16301f; --info-soft: #1b2840; --info: #9db7e6;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e141b; --surface: #151d27; --sunk: #1c2632; --line: #2b3746; --fg: #e4e9ef; --muted: #96a3b3;
+  --accent: #4db3ab; --accent-ink: #062120; --accent-soft: #163735; --credit: #62c891; --debit: #f08b81;
+  --warn: #e5b357; --warn-soft: #3a2c12; --ok-soft: #16301f; --info-soft: #1b2840; --info: #9db7e6;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: 1.9rem; font-weight: 700; }
+h2 { font-size: 1.15rem; font-weight: 600; }
+h3 { font-size: 1rem; font-weight: 600; }
+p { margin: 0; }
+.mono, .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+.eyebrow { font-family: var(--f-display); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); font-weight: 600; }
+
+header.top { display: grid; gap: 8px; }
+header.top p { max-width: 68ch; color: var(--muted); }
+
+.banner { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: var(--info-soft); color: var(--info); border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; }
+.banner strong { font-weight: 600; }
+
+/* Imports */
+.imports { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.slot { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.slot-head { display: flex; gap: 10px; align-items: baseline; }
+.step { font-family: var(--f-mono); font-size: 0.8rem; color: var(--accent); font-weight: 500; }
+.drop { border: 1.5px dashed var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 6px; justify-items: start; background: var(--sunk); transition: border-color .15s, background .15s; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop .hint { font-size: 0.85rem; color: var(--muted); }
+.loaded { font-size: 0.9rem; display: grid; gap: 2px; }
+.loaded b { font-weight: 600; }
+.err { color: var(--debit); font-size: 0.88rem; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+label.field { display: grid; gap: 4px; font-size: 0.85rem; color: var(--muted); min-width: 0; }
+details.paste summary { cursor: pointer; font-size: 0.88rem; color: var(--accent); }
+details.paste textarea { width: 100%; min-height: 120px; margin-top: 8px; font-family: var(--f-mono); font-size: 0.8rem; }
+
+button, .btn { font: inherit; font-weight: 600; font-size: 0.9rem; border-radius: 7px; padding: 8px 14px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.primary:hover { filter: brightness(1.08); }
+button.link { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 500; font-size: 0.85rem; text-decoration: underline; text-underline-offset: 2px; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type="text"], input[type="number"], select, textarea { font: inherit; font-size: 0.88rem; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+input[type="file"] { font-size: 0.85rem; max-width: 100%; }
+
+/* Bilan */
+.summary { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip { display: inline-flex; gap: 8px; align-items: center; border-radius: 999px; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; border: 1px solid transparent; background: var(--sunk); color: var(--fg); cursor: pointer; }
+.chip .n { font-family: var(--f-mono); font-weight: 500; }
+.chip[aria-pressed="true"] { border-color: var(--fg); }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.s-new .dot, .dot.s-new { background: var(--accent); }
+.s-check .dot, .dot.s-check { background: var(--warn); }
+.s-match .dot, .dot.s-match { background: var(--credit); }
+.s-group .dot, .dot.s-group { background: var(--info); }
+
+/* Grand livre */
+.ledger { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.ledger-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 980px; font-size: 0.88rem; }
+th { text-align: left; font-family: var(--f-display); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding: 9px 10px; background: var(--sunk); white-space: nowrap; }
+td { padding: 8px 10px; border-top: 1px solid var(--line); vertical-align: top; }
+tr.off td:not(:first-child) { opacity: .55; }
+td.amt { text-align: right; white-space: nowrap; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.cr { color: var(--credit); } .db { color: var(--debit); }
+td.date { white-space: nowrap; font-family: var(--f-mono); font-size: 0.82rem; }
+td .lab { width: 100%; min-width: 270px; }
+td select { max-width: 230px; }
+.pill { display: inline-flex; gap: 6px; align-items: center; border-radius: 999px; padding: 2px 9px; font-size: 0.76rem; font-weight: 600; white-space: nowrap; }
+.pill.s-new { background: var(--accent-soft); color: var(--accent); }
+.pill.s-check { background: var(--warn-soft); color: var(--warn); }
+.pill.s-match { background: var(--ok-soft); color: var(--credit); }
+.pill.s-group { background: var(--info-soft); color: var(--info); }
+.why { font-size: 0.78rem; color: var(--muted); margin-top: 4px; max-width: 34ch; }
+.why ul { margin: 2px 0 0; padding-left: 16px; }
+.sug { font-size: 0.74rem; color: var(--muted); margin-top: 3px; }
+.empty { padding: 28px 16px; color: var(--muted); text-align: center; }
+
+/* Export */
+.export { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; }
+.totals { display: flex; gap: 22px; flex-wrap: wrap; }
+.totals div { display: grid; }
+.totals .v { font-family: var(--f-mono); font-size: 1.15rem; }
+ol.how { margin: 0; padding-left: 20px; display: grid; gap: 4px; color: var(--muted); font-size: 0.9rem; max-width: 80ch; }
+ol.how b { color: var(--fg); font-weight: 600; }
+.toast { font-size: 0.88rem; }
+
+details.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+details.panel > summary { cursor: pointer; padding: 14px 16px; font-family: var(--f-display); font-weight: 600; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+details.panel > summary .muted { font-family: var(--f-body); font-weight: 400; font-size: 0.88rem; }
+.panel-body { padding: 0 16px 16px; display: grid; gap: 12px; }
+.rules { display: grid; gap: 8px; }
+.rule { display: grid; grid-template-columns: minmax(0, 2fr) 110px minmax(0, 2fr) auto; gap: 8px; align-items: center; }
+@media (max-width: 640px) { .rule { grid-template-columns: 1fr 1fr; } }
+table.mini { min-width: 560px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Union Gymnique Doloise · trésorerie</span>
+    <h1>Relevés vers Kalisport</h1>
+    <p>Importez le relevé de la banque et l'export du journal Kalisport. L'appli repère les opérations déjà saisies et prépare un fichier avec seulement celles qui manquent, catégories comprises. Les fichiers restent dans votre navigateur : rien n'est envoyé.</p>
+  </header>
+
+  <div class="banner" id="demoBanner" hidden>
+    <strong>Exemple fictif.</strong> <span>Ces lignes servent à montrer le fonctionnement. Importez vos fichiers ci-dessous pour les remplacer.</span>
+  </div>
+
+  <section class="imports" aria-label="Fichiers à importer">
+    <div class="slot" id="slotBank">
+      <div class="slot-head"><span class="step">1</span><h2>Relevé de compte</h2></div>
+      <div class="drop" id="dropBank">
+        <input type="file" id="fileBank" accept=".csv,.txt,.xls,.xlsx,.ofx,.qfx">
+        <span class="hint">CSV, Excel ou OFX téléchargé depuis l'espace banque (Crédit Mutuel : Comptes › Télécharger).</span>
+      </div>
+      <details class="paste" id="pasteBox">
+        <summary>Ou coller les lignes copiées depuis le site de la banque</summary>
+        <textarea id="pasteText" placeholder="01/10/2026 01/10/2026 VIR SALAIRE SEPT ... -899,66 EUR"></textarea>
+        <div class="row" style="margin-top:8px"><button id="pasteGo">Lire le texte collé</button></div>
+      </details>
+      <div class="loaded" id="bankInfo"></div>
+      <div class="err" id="bankErr" role="alert"></div>
+    </div>
+
+    <div class="slot" id="slotKali">
+      <div class="slot-head"><span class="step">2</span><h2>Export du journal Kalisport</h2></div>
+      <div class="drop" id="dropKali">
+        <input type="file" id="fileKali" accept=".xls,.xlsx,.csv">
+        <span class="hint">Kalisport › Perso › Comptabilité › Journal › Exporter (le fichier « comptabilite-journal-….xls »).</span>
+      </div>
+      <div class="loaded" id="kaliInfo"></div>
+      <div class="row">
+        <label class="field">Compte Kalisport de ce relevé
+          <select id="account"></select>
+        </label>
+        <label class="field">Écart de dates toléré
+          <select id="tol">
+            <option value="3">3 jours</option>
+            <option value="7" selected>7 jours</option>
+            <option value="15">15 jours</option>
+          </select>
+        </label>
+      </div>
+      <div class="err" id="kaliErr" role="alert"></div>
+    </div>
+  </section>
+
+  <section class="ledger" aria-label="Revue des opérations">
+    <div class="ledger-head">
+      <div style="display:grid;gap:4px">
+        <span class="eyebrow"><span class="step">3</span>&nbsp; Vérifier</span>
+        <h2 id="ledgerTitle">Opérations du relevé</h2>
+      </div>
+      <div class="summary" id="summary" role="group" aria-label="Filtrer par statut"></div>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th style="width:34px"><input type="checkbox" id="allBox" aria-label="Tout cocher dans la vue"></th>
+          <th>Date</th><th>Libellé (modifiable)</th><th style="text-align:right">Montant</th><th>Dans Kalisport ?</th><th>Catégorie</th><th>Mode</th><th>Commentaire</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="export" aria-label="Export">
+    <div style="display:grid;gap:4px">
+      <span class="eyebrow"><span class="step">4</span>&nbsp; Exporter</span>
+      <h2>Fichier à importer dans Kalisport</h2>
+    </div>
+    <div class="totals">
+      <div><span class="eyebrow">Lignes cochées</span><span class="v" id="tCount">0</span></div>
+      <div><span class="eyebrow">Recettes</span><span class="v cr" id="tCr">0,00</span></div>
+      <div><span class="eyebrow">Dépenses</span><span class="v db" id="tDb">0,00</span></div>
+      <div><span class="eyebrow">Sans catégorie</span><span class="v" id="tNoCat">0</span></div>
+    </div>
+    <div class="row">
+      <button class="primary" id="dlXlsx">Télécharger le fichier Excel (.xlsx)</button>
+      <button id="dlCsv">Télécharger en CSV</button>
+      <span class="toast muted" id="toast" role="status"></span>
+    </div>
+    <ol class="how">
+      <li>Dans Kalisport : <b>Perso › Comptabilité › Journal</b>, bouton <b>…</b>, puis <b>Importer dans le journal</b>.</li>
+      <li>Choisissez le compte bancaire, puis le fichier. Associez les colonnes : <b>Date</b>, <b>Libellé</b>, <b>Montant</b> (positif = recette, négatif = dépense), puis <b>Catégorie</b> et <b>Mode de règlement</b> si la page les propose.</li>
+      <li>Kalisport conseille de tester d'abord avec 5 à 10 lignes : décochez le reste ici, importez, vérifiez le journal, puis faites le reste.</li>
+    </ol>
+  </section>
+
+  <details class="panel" id="orphPanel">
+    <summary>Dans Kalisport mais pas sur le relevé <span class="muted" id="orphCount"></span></summary>
+    <div class="panel-body">
+      <p class="muted small">Écritures du compte choisi, datées dans la période du relevé, qu'aucune ligne bancaire n'explique. Souvent des chèques pas encore remis en banque, ou une erreur de montant ou de date.</p>
+      <div class="scroll"><table class="mini"><thead><tr><th>Date</th><th>Libellé Kalisport</th><th>Mode</th><th style="text-align:right">Montant</th></tr></thead><tbody id="orphRows"></tbody></table></div>
+    </div>
+  </details>
+
+  <details class="panel" id="rulesPanel">
+    <summary>Règles de catégorie <span class="muted">si le libellé bancaire contient…, proposer cette catégorie</span></summary>
+    <div class="panel-body">
+      <p class="muted small">Les règles sont gardées dans ce navigateur. Sans règle, l'appli reprend la catégorie d'une opération semblable déjà saisie dans Kalisport. Le lien « mémoriser » d'une ligne crée une règle à partir de son libellé.</p>
+      <div class="rules" id="rules"></div>
+      <div class="row">
+        <button id="addRule">Ajouter une règle</button>
+        <button id="saveRules">Enregistrer les règles dans un fichier</button>
+        <label class="btn" for="loadRules" style="cursor:pointer">Charger un fichier de règles</label>
+        <input type="file" id="loadRules" accept=".json" hidden>
+        <button class="link" id="resetRules">Revenir aux règles par défaut</button>
+      </div>
+    </div>
+  </details>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ===== Cœur : lecture des fichiers, rapprochement, suggestions ===== */
+var Core = (function () {
+  'use strict';
+  var DAY = 86400000;
+
+  function norm(s) {
+    return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+  }
+
+  /* ---------- Montants ---------- */
+  function parseAmount(v) {
+    if (v == null || v === '') return null;
+    if (typeof v === 'number') return isFinite(v) ? Math.round(v * 100) : null;
+    var s = String(v).replace(/[  \s]/g, '').replace(/EUR|€/gi, '').replace(/[−–]/g, '-');
+    if (!s) return null;
+    var neg = /^-|-$|^\(.*\)$/.test(s);
+    s = s.replace(/[+\-()]/g, '');
+    if (!/\d/.test(s)) return null;
+    var lc = s.lastIndexOf(','), ld = s.lastIndexOf('.');
+    var last = Math.max(lc, ld);
+    if (last >= 0) {
+      var dec = s.length - last - 1;
+      var sep = s[last];
+      var other = sep === ',' ? '.' : ',';
+      var countSep = s.split(sep).length - 1;
+      if (dec >= 1 && dec <= 2 && countSep === 1) {
+        s = s.split(other).join('').replace(sep, '.');
+      } else {
+        s = s.split(',').join('').split('.').join('');
+      }
+    }
+    var n = parseFloat(s);
+    if (!isFinite(n)) return null;
+    return Math.round(n * 100) * (neg ? -1 : 1);
+  }
+
+  function fmtAmount(c, signed) {
+    var a = Math.abs(c) / 100;
+    var s = a.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/ | /g, ' ');
+    if (signed) s = (c < 0 ? '−' : '+') + s;
+    return s;
+  }
+
+  /* ---------- Dates (stockées en ms UTC minuit) ---------- */
+  function mk(y, m, d) {
+    if (y < 100) y += 2000;
+    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+    return Date.UTC(y, m - 1, d);
+  }
+  function parseDate(v) {
+    if (v == null || v === '') return null;
+    if (v instanceof Date) return isNaN(v) ? null : Date.UTC(v.getFullYear(), v.getMonth(), v.getDate());
+    if (typeof v === 'number') {
+      if (v > 20000 && v < 80000) { // numéro de série Excel
+        return Date.UTC(1899, 11, 30) + Math.round(v) * DAY;
+      }
+      return null;
+    }
+    var s = String(v).trim(), m;
+    if ((m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/))) return mk(+m[3], +m[2], +m[1]);
+    if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})/))) return mk(+m[1], +m[2], +m[3]);
+    if ((m = s.match(/^(\d{4})(\d{2})(\d{2})/))) return mk(+m[1], +m[2], +m[3]);
+    return null;
+  }
+  function fmtDate(t) {
+    if (t == null) return '';
+    var d = new Date(t);
+    return String(d.getUTCDate()).padStart(2, '0') + '/' + String(d.getUTCMonth() + 1).padStart(2, '0') + '/' + d.getUTCFullYear();
+  }
+
+  /* ---------- CSV ---------- */
+  function parseCSV(text) {
+    text = text.replace(/^﻿/, '');
+    var first = text.split(/\r?\n/).slice(0, 15).join('\n');
+    var cands = [';', '\t', ','], delim = ';', best = -1;
+    cands.forEach(function (d) {
+      var c = first.split(d).length;
+      if (c > best) { best = c; delim = d; }
+    });
+    var rows = [], row = [], cell = '', q = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (q) {
+        if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+        else cell += ch;
+      } else if (ch === '"') q = true;
+      else if (ch === delim) { row.push(cell); cell = ''; }
+      else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && text[i + 1] === '\n') i++;
+        row.push(cell); rows.push(row); row = []; cell = '';
+      } else cell += ch;
+    }
+    if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+
+  /* ---------- Relevé bancaire : tableau ---------- */
+  function findHeader(rows, test) {
+    for (var i = 0; i < Math.min(rows.length, 40); i++) {
+      var r = (rows[i] || []).map(norm);
+      if (test(r)) return i;
+    }
+    return -1;
+  }
+
+  function bankFromRows(rows) {
+    var hi = findHeader(rows, function (r) {
+      var hasDate = r.some(function (c) { return /^DATE/.test(c); });
+      var hasLab = r.some(function (c) { return /LIBELLE|OPERATION|DESCRIPTION|INTITULE|DETAIL/.test(c) && !/^DATE/.test(c); });
+      var hasAmt = r.some(function (c) { return /MONTANT|DEBIT|CREDIT/.test(c); });
+      return hasDate && hasLab && hasAmt;
+    });
+    if (hi < 0) throw new Error("Je ne trouve pas d'en-tête avec les colonnes Date, Libellé et Montant (ou Débit/Crédit).");
+    var h = rows[hi].map(norm), col = { date: -1, val: -1, lab: -1, deb: -1, cre: -1, amt: -1 };
+    h.forEach(function (c, i) {
+      if (/^DATE/.test(c)) {
+        if (/VALEUR/.test(c)) { if (col.val < 0) col.val = i; }
+        else if (col.date < 0) col.date = i;
+      } else if (/LIBELLE|OPERATION|DESCRIPTION|INTITULE/.test(c) && col.lab < 0) col.lab = i;
+      else if (/DEBIT/.test(c) && col.deb < 0) col.deb = i;
+      else if (/CREDIT/.test(c) && col.cre < 0) col.cre = i;
+      else if (/MONTANT/.test(c) && col.amt < 0) col.amt = i;
+    });
+    if (col.date < 0) col.date = col.val;
+    if (col.lab < 0) h.forEach(function (c, i) { if (/DETAIL/.test(c) && col.lab < 0) col.lab = i; });
+    var out = [];
+    for (var i = hi + 1; i < rows.length; i++) {
+      var r = rows[i] || [];
+      var d = parseDate(r[col.date]);
+      if (d == null) continue;
+      var amt = null;
+      if (col.amt >= 0 && r[col.amt] !== '' && r[col.amt] != null) amt = parseAmount(r[col.amt]);
+      else {
+        var de = col.deb >= 0 ? parseAmount(r[col.deb]) : null;
+        var cr = col.cre >= 0 ? parseAmount(r[col.cre]) : null;
+        if (de) amt = -Math.abs(de);
+        else if (cr) amt = Math.abs(cr);
+      }
+      if (!amt) continue;
+      out.push({ date: d, valeur: parseDate(r[col.val]), label: String(r[col.lab] == null ? '' : r[col.lab]).replace(/\s+/g, ' ').trim(), amount: amt });
+    }
+    return out;
+  }
+
+  /* ---------- Relevé bancaire : OFX ---------- */
+  function bankFromOFX(text) {
+    var out = [], re = /<STMTTRN>([\s\S]*?)(?:<\/STMTTRN>|(?=<STMTTRN>)|<\/BANKTRANLIST>)/gi, m;
+    function tag(b, t) { var x = b.match(new RegExp('<' + t + '>([^<\\r\\n]*)', 'i')); return x ? x[1].trim() : ''; }
+    while ((m = re.exec(text))) {
+      var b = m[1];
+      var amt = parseAmount(tag(b, 'TRNAMT').replace(',', '.'));
+      var d = parseDate(tag(b, 'DTPOSTED'));
+      if (amt == null || d == null) continue;
+      var name = tag(b, 'NAME'), memo = tag(b, 'MEMO');
+      var label = name; if (memo && memo !== name) label = (name ? name + ' ' : '') + memo;
+      out.push({ date: d, valeur: parseDate(tag(b, 'DTUSER')) || null, label: label.replace(/\s+/g, ' ').trim(), amount: amt });
+    }
+    return out;
+  }
+
+  /* ---------- Relevé bancaire : texte copié depuis le site de la banque ---------- */
+  function bankFromText(text) {
+    var out = [];
+    var money = /([+\-−]?\s?\d{1,3}(?:[   .]\d{3})*,\d{2})\s*(?:EUR|€)?/g;
+    text.split(/\r?\n/).forEach(function (line) {
+      var m = line.match(/^\s*(\d{2}\/\d{2}\/\d{2,4})\s+(?:(\d{2}\/\d{2}\/\d{2,4})\s+)?(.*)$/);
+      if (!m) return;
+      var rest = m[3], all = [], x;
+      money.lastIndex = 0;
+      while ((x = money.exec(rest))) all.push(x);
+      if (!all.length) return;
+      var last = all[all.length - 1];
+      var amt = parseAmount(last[1]);
+      if (!amt) return;
+      var label = rest.slice(0, all[0].index)
+        .replace(/[∨˅⌄]/g, ' ').replace(/^\s*v\s+/i, ' ')
+        .replace(/\b(D[ée]tail|Regroupement)\b/gi, ' ')
+        .replace(/\s+/g, ' ').trim();
+      out.push({ date: parseDate(m[1]), valeur: parseDate(m[2]), label: label, amount: amt });
+    });
+    return out;
+  }
+
+  /* ---------- Export Kalisport (journal) ---------- */
+  function kaliFromRows(rows) {
+    var hi = findHeader(rows, function (r) { return r.indexOf('OPERATION') >= 0 && r.indexOf('MONTANT') >= 0; });
+    if (hi < 0) throw new Error("Ce fichier ne ressemble pas à l'export du journal Kalisport (colonnes OPERATION et MONTANT introuvables).");
+    var h = rows[hi].map(function (c) { return String(c).trim().toUpperCase(); });
+    var out = [];
+    for (var i = hi + 1; i < rows.length; i++) {
+      var r = rows[i] || [], o = {};
+      h.forEach(function (k, j) { o[k] = r[j] == null ? '' : r[j]; });
+      var amt = parseAmount(o.MONTANT);
+      var date = parseDate(o.DATE);
+      if (amt == null || date == null) continue;
+      var op = norm(o.OPERATION), lab = String(o.LIBELLE || '');
+      var sign = 1;
+      if (/DEPENSE/.test(op)) sign = -1;
+      else if (/MOUVEMENT/.test(op)) sign = /EMIS|VERS /.test(norm(lab)) && !/RECU/.test(norm(lab)) ? -1 : 1;
+      out.push({
+        id: String(o.ID || ''), type: String(o.OPERATION || ''), amount: sign * Math.abs(amt),
+        date: date, valeur: parseDate(o.DATE_VALEUR), label: lab,
+        account: String(o.COMPTE_BANCAIRE || ''), catNum: String(o.CATEGORIE_NUMERO || ''), catLib: String(o.CATEGORIE_LIBELLE || ''),
+        mode: String(o.MODE_REGLEMENT || ''), contact: String(o.CONTACT || ''), rapproche: String(o.RAPPROCHE || '') === '1',
+        numPaiement: String(o.NUMERO_PAIEMENT || '')
+      });
+    }
+    return out;
+  }
+
+  function accountsOf(kali) {
+    var c = {};
+    kali.forEach(function (k) { c[k.account] = (c[k.account] || 0) + 1; });
+    return Object.keys(c).map(function (a) { return { name: a, count: c[a] }; })
+      .sort(function (a, b) { return b.count - a.count; });
+  }
+  function defaultAccount(accs) {
+    var a = accs.filter(function (x) { return !/en ligne/i.test(x.name) && x.name; });
+    return (a[0] || accs[0] || { name: '' }).name;
+  }
+
+  /* ---------- Similarité de libellés ---------- */
+  var STOP = { VIR: 1, INST: 1, SEPA: 1, PRLV: 1, M: 1, MME: 1, MLLE: 1, MADAME: 1, MONSIEUR: 1, OU: 1, DE: 1, DU: 1, LA: 1, LE: 1, LES: 1, ET: 1, A: 1, AU: 1, EN: 1, VIA: 1, POUR: 1,
+    CHEQUE: 1, CHQ: 1, REM: 1, REMISE: 1, REF: 1, SALAIRE: 1, PAIEMENT: 1, PAIEMENTS: 1, CB: 1, CARTE: 1, FACT: 1, FACTURE: 1,
+    JANV: 1, JANVIER: 1, FEV: 1, FEVRIER: 1, MARS: 1, AVRIL: 1, AVR: 1, MAI: 1, JUIN: 1, JUIL: 1, JUILLET: 1, AOUT: 1, SEPT: 1, SEPTEMBRE: 1, OCT: 1, OCTOBRE: 1, NOV: 1, NOVEMBRE: 1, DEC: 1, DECEMBRE: 1 };
+  function tokens(s) {
+    return norm(s).split(' ').filter(function (t) { return t.length > 1 && !STOP[t] && !/^\d+$/.test(t); });
+  }
+  function sim(a, b) {
+    var A = tokens(a), B = tokens(b);
+    if (!A.length || !B.length) return 0;
+    var sb = {}; B.forEach(function (t) { sb[t] = 1; });
+    var n = 0; A.forEach(function (t) { if (sb[t]) n++; });
+    return n / Math.min(A.length, B.length);
+  }
+
+  /* ---------- Rapprochement ---------- */
+  var REMISE_RE = /\bREM(ISE)?\b.*\b(CHQ|CHEQUES?|CB|CARTE)\b|\bREM CHQ\b|\bREMISE\b|\bDEPOT\b/;
+
+  function subsetSum(items, target, maxItems) {
+    // items: [{amount (cents, >0)}]; renvoie la liste d'indices ou null
+    if (target <= 0 || target > 5000000 || !items.length) return null;
+    var reach = new Uint8Array(target + 1), from = new Int16Array(target + 1).fill(-1), cnt = new Uint16Array(target + 1);
+    reach[0] = 1;
+    for (var i = 0; i < items.length; i++) {
+      var a = items[i].amount;
+      if (a <= 0 || a > target) continue;
+      for (var s = target; s >= a; s--) {
+        if (!reach[s] && reach[s - a] && cnt[s - a] < maxItems) { reach[s] = 1; from[s] = i; cnt[s] = cnt[s - a] + 1; }
+      }
+      if (reach[target]) break;
+    }
+    if (!reach[target]) return null;
+    var res = [], t = target;
+    while (t > 0) { var k = from[t]; res.push(k); t -= items[k].amount; }
+    return res.length >= 2 ? res : null;
+  }
+
+  function reconcile(bank, kali, opts) {
+    opts = opts || {};
+    var tol = (opts.tolerance == null ? 7 : opts.tolerance) * DAY;
+    var loose = 45 * DAY;
+    var lines = bank.map(function (b, i) {
+      return { i: i, date: b.date, valeur: b.valeur, label: b.label, amount: b.amount, status: 'new', matches: [], probable: null };
+    });
+    if (!lines.length) return { lines: lines, orphans: [], range: null };
+    var minD = Math.min.apply(null, lines.map(function (l) { return l.date; }));
+    var maxD = Math.max.apply(null, lines.map(function (l) { return l.date; }));
+    var K = kali.filter(function (k) {
+      return (!opts.account || k.account === opts.account) && k.date >= minD - 75 * DAY && k.date <= maxD + 15 * DAY;
+    }).map(function (k) { return Object.assign({ used: false }, k); });
+
+    function dd(l, k) {
+      var x = Math.abs(l.date - k.date);
+      if (k.valeur != null) x = Math.min(x, Math.abs(l.date - k.valeur));
+      if (l.valeur != null) x = Math.min(x, Math.abs(l.valeur - k.date));
+      return x;
+    }
+
+    // Compatibilité du mode de règlement (Kalisport) avec le libellé bancaire
+    function modeOk(l, k) {
+      var m = norm(k.mode), b = norm(l.label);
+      if (!m) return true;
+      if (/^VIR|VIREMENT|MANGOPAY/.test(b)) return /VIREMENT|PRELEVEMENT/.test(m);
+      if (/^PRLV|PRELEVEMENT|^FACT|COMMISSION/.test(b)) return /PRELEVEMENT|VIREMENT/.test(m);
+      if (/CHEQUE|CHQ/.test(b)) return /CHEQUE/.test(m);
+      if (/PAIEMENT|CARTE|\bCB\b/.test(b)) return /CARTE/.test(m);
+      return true;
+    }
+    function pairOk(l, k, s, ok) {
+      // une recette (cotisation…) au montant courant doit concorder en mode ou en nom
+      return l.amount < 0 || ok || s > 0;
+    }
+
+    // 1. Même montant, date proche
+    var pairs = [];
+    lines.forEach(function (l) {
+      K.forEach(function (k, j) {
+        if (k.amount === l.amount) {
+          var d = dd(l, k);
+          var s = sim(l.label, k.label + ' ' + k.contact), ok = modeOk(l, k);
+          if ((d <= tol || (s > 0 && d <= 30 * DAY)) && pairOk(l, k, s, ok)) pairs.push({ l: l, j: j, s: s, score: d / DAY - 6 * s - (ok ? 3 : 0) });
+        }
+      });
+    });
+    pairs.sort(function (a, b) { return a.score - b.score; });
+    pairs.forEach(function (p) {
+      if (p.l.status !== 'new' || K[p.j].used) return;
+      K[p.j].used = true; p.l.status = 'match'; p.l.matches = [K[p.j]]; p.l.weak = p.l.amount > 0 && p.s === 0;
+    });
+
+    // 2. Remises groupées (chèques / CB) = plusieurs écritures Kalisport
+    lines.filter(function (l) { return l.status === 'new' && l.amount > 0 && REMISE_RE.test(norm(l.label)); })
+      .sort(function (a, b) { return a.date - b.date; })
+      .forEach(function (l) {
+        var cb = /\bCB\b|CARTE/.test(norm(l.label));
+        var cand = K.filter(function (k) {
+          if (k.used || k.amount <= 0) return false;
+          var m = norm(k.mode);
+          var okMode = cb ? /CARTE/.test(m) && !/EN \d+ FOIS/.test(m) : /CHEQUE|ESPECE/.test(m) || m === '';
+          return okMode && k.date <= l.date + 3 * DAY && k.date >= l.date - 60 * DAY;
+        }).sort(function (a, b) { return Math.abs(l.date - a.date) - Math.abs(l.date - b.date); });
+        var idx = subsetSum(cand, l.amount, 40);
+        if (idx) {
+          var ms = idx.map(function (x) { return cand[x]; });
+          ms.forEach(function (k) { k.used = true; });
+          l.status = 'group'; l.matches = ms.sort(function (a, b) { return a.date - b.date; });
+        }
+      });
+
+    // 3. Même montant mais date éloignée → à vérifier
+    lines.forEach(function (l) {
+      if (l.status !== 'new') return;
+      var best = null;
+      K.forEach(function (k) {
+        if (k.used || k.amount !== l.amount) return;
+        if (!pairOk(l, k, sim(l.label, k.label + ' ' + k.contact), modeOk(l, k))) return;
+        var d = dd(l, k);
+        if (d <= loose && (!best || d < best.d)) best = { k: k, d: d };
+      });
+      if (best) { l.status = 'check'; l.probable = best.k; }
+    });
+
+    var orphans = K.filter(function (k) { return !k.used && k.date >= minD && k.date <= maxD; })
+      .filter(function (k) {
+        return !lines.some(function (l) { return l.probable === k; });
+      });
+    return { lines: lines, orphans: orphans, range: [minD, maxD] };
+  }
+
+  /* ---------- Mode de règlement deviné ---------- */
+  function guessMode(label, amount) {
+    var n = norm(label);
+    if (/^PRLV|PRELEVEMENT|^FACT|FRAIS|COTIS(ATION)? CARTE|COMMISSION/.test(n)) return 'Prélèvement';
+    if (/^VIR|VIREMENT/.test(n)) return 'Virement';
+    if (/^CHEQUE|^CHQ|REM CHQ|REMISE CH/.test(n)) return 'Chèque';
+    if (/PAIEMENT|^CB|CARTE|PAIEMENTS/.test(n)) return 'Carte bancaire';
+    if (/RETRAIT|ESPECES|VERSEMENT/.test(n)) return 'Espèces';
+    return amount < 0 ? 'Prélèvement' : 'Virement';
+  }
+
+  /* ---------- Suggestion de catégorie ---------- */
+  function suggest(line, rules, learned) {
+    var n = norm(line.label);
+    for (var i = 0; i < rules.length; i++) {
+      var r = rules[i];
+      if (!r.key || !r.cat) continue;
+      if (r.sign === '-' && line.amount > 0) continue;
+      if (r.sign === '+' && line.amount < 0) continue;
+      if (n.indexOf(norm(r.key)) >= 0) return { cat: r.cat, src: 'règle « ' + r.key + ' »' };
+    }
+    var best = null;
+    learned.forEach(function (x) {
+      if ((x.amount < 0) !== (line.amount < 0)) return;
+      var s = sim(line.label, x.label);
+      if (s >= 0.6 && (!best || s > best.s)) best = { s: s, cat: x.cat, from: x.label };
+    });
+    if (best) return { cat: best.cat, src: 'comme « ' + best.from + ' »' };
+    return null;
+  }
+  function learnFrom(result) {
+    var out = [];
+    result.lines.forEach(function (l) {
+      if (l.status === 'match' && l.matches[0] && l.matches[0].catNum) out.push({ label: l.label, amount: l.amount, cat: l.matches[0].catNum });
+    });
+    return out;
+  }
+
+  function ruleKey(label) {
+    return norm(label).split(' ').filter(function (w) { return w && !/\d/.test(w); }).slice(0, 4).join(' ');
+  }
+
+  return {
+    ruleKey: ruleKey, norm: norm, parseAmount: parseAmount, fmtAmount: fmtAmount, parseDate: parseDate, fmtDate: fmtDate,
+    parseCSV: parseCSV, bankFromRows: bankFromRows, bankFromOFX: bankFromOFX, bankFromText: bankFromText,
+    kaliFromRows: kaliFromRows, accountsOf: accountsOf, defaultAccount: defaultAccount,
+    reconcile: reconcile, guessMode: guessMode, suggest: suggest, learnFrom: learnFrom, sim: sim, subsetSum: subsetSum
+  };
+})();
+if (typeof module !== 'undefined') module.exports = Core;
+
+</script>
+<script>
+(function () {
+'use strict';
+var C = Core;
+var $ = function (id) { return document.getElementById(id); };
+
+/* ---------- Plan de catégories du club (compte de résultat 2026-2027) ---------- */
+var D = 'D', R = 'R';
+var BASE_CATS = [
+  ['00000','Frais de bouche',D],['000','ADHESION',D],['001','Licences Fédération',D],['010','REMBOURSEMENT',D],['011','Remboursement Adherent (Caution)',D],
+  ['100','INDETERMINE',D],['101','INDETERMINE',D],['1100','SALAIRE',D],['1101','Salaire Dominique',D],['1102','Salaire Marie',D],['1103','Salaire Louana',D],
+  ['1104','Frais Gestion comptable',D],['1105','Salaire Anais Pécoud',D],['1106','URSAFF',D],['1107','Salaire Cyrielle Louis',D],['1108','Mutuelle',D],
+  ['1109','Salaire Fourtier Charles Aimé',D],['1200','COMPETITION',D],['1202','Déplacements bénévoles',D],['1203','Déplacement compétition',D],
+  ['1204','Hébergement compétition',D],['1205','Inscription compétition',D],['1207',"Noel de l'UGD",D],['1208','1er Tours des coupes 2025',D],
+  ['1209','départemental imposés individuels',D],['1210','Badges',D],['1211','GALA 2026',D],['1212','compétition départementale',D],['1400','BOUTIQUE',D],
+  ['1401','Achat Tshirt/sweat',D],['1402','Achat Photo',D],['1500','FRAIS BANCAIRE',D],['1501','FRAIS BANCAIRE KALISPORT',D],['1502','Frais Credit Mutuelle',D],
+  ['1700','FRAIS DE FONCTIONNEMENT',D],['1701','Achats divers- Cadeaux et récompenses',D],['1702','FSCF',D],['1703','Investissement Matériels',D],
+  ['1704','Location Salle Euthonie',D],['1800','FORMATION',D],['1801','Formation GYM',D],['1802','Formation JUGE',D],['1803','Formations moniteurs',D],
+  ['2000','EPARGNE',D],['2001','Virement sur Compte Epargne',D],['2100','Contribution Volontaires',D],['2101','Contributions volontaires en nature',D],
+  ['000','ADHESION',R],['001','Cotisation',R],['100','Indeterminé',R],['101','INDETERMINE',R],['1200','COMPETITION',R],['1206','Participation adhérents aux déplacements',R],
+  ['1207',"Noel de l'UGD",R],['1208','1er Tours des coupes 2025',R],['1209','départemental imposés individuels',R],['1210','Badges',R],['1211','GALA 2026',R],
+  ['1400','BOUTIQUE',R],['1403','Vente articles gym',R],['1405','Vente photo',R],['160','SUBVENTION',R],['1110',"Aide a l'apprentissage (Pecoud Anais)",R],
+  ['161','SUBVENTION MUNICIPALITE DOLE',R],['162','SUBVENTION REGION',R],['163','SUBVENTION FDVA',R],['164','CD39 FSCF',R],['165','DEPARTEMENT',R],['166','ANS FSCF',R],
+  ['1800','FORMATION',R],['1803','Remboursement Formation',R],['2000','EPARGNE',R],['2001','Prelevement sur Compte epargne',R],['2100','Contribution Volontaires',R],
+  ['2101','Contributions volontaires en nature',R]
+];
+var DEFAULT_RULES = [
+  { key: 'URSSAF', sign: '-', cat: '1106' },
+  { key: 'PRLV SEPA FSCF', sign: '-', cat: '1702' },
+  { key: 'PECOUD', sign: '-', cat: '1105' },
+  { key: 'CYRIELLE LOUIS', sign: '-', cat: '1107' },
+  { key: 'LEMOINE MARIE', sign: '-', cat: '1102' },
+  { key: 'FACT SGT', sign: '-', cat: '1502' },
+  { key: 'KALISPORT', sign: '-', cat: '1501' },
+  { key: 'VIR SUR COMPTE EPARGNE', sign: '-', cat: '2001' },
+  { key: 'COMPTE COURANT', sign: '+', cat: '2001' }
+];
+var MODES = ['Virement', 'Prélèvement', 'Chèque', 'Carte bancaire', 'Espèces', 'Cheque vacances'];
+
+/* ---------- Données d'exemple (fictives) ---------- */
+function exBank() {
+  return [
+    ['02/10/2026','VIR SALAIRE SEPT DURAND CLAIRE',-41250],['01/10/2026','PRLV SEPA FSCF',-61200],['30/09/2026','VIR MANGOPAY',184560],
+    ['29/09/2026','REM CHQ N4410021 REF5520031',44000],['26/09/2026','VIR INST MME LEBRUN SOPHIE',13000],['22/09/2026','CHEQUE 4410017',-14500],
+    ['18/09/2026','PRLV SEPA URSSAF DE FRANCHE COM',-2400],['15/09/2026','FACT SGT26091500011',-901],['12/09/2026','PAIEMENT CB DECATHLON DOLE',-8790],
+    ['09/09/2026','VIR INST M MARTIN PAUL',18000],['05/09/2026','VIR SUBVENTION VILLE DE DOLE',150000]
+  ].map(function (x) { return { date: C.parseDate(x[0]), valeur: null, label: x[1], amount: x[2] }; });
+}
+function exKali() {
+  var a = [
+    ['Dépense','02/10/2026','Salaire septembre Claire Durand',412.5,'1102','Salaire Marie','Virement',''],
+    ['Mouvement interne','27/09/2026','Mouvement reçu depuis Paiement en ligne - ugd',1845.6,'','','Virement',''],
+    ['Recette','24/09/2026','Cotisation adhérent PETIT Léa - 2026-2027',130,'001','Cotisation','Chèque','PETIT Léa'],
+    ['Recette','25/09/2026','Cotisation adhérent ROUX Inès - 2026-2027',180,'001','Cotisation','Chèque','ROUX Inès'],
+    ['Recette','26/09/2026','Cotisation adhérent BLANC Zoé - 2026-2027',130,'001','Cotisation','Chèque','BLANC Zoé'],
+    ['Recette','10/09/2026','Cotisation adhérent MARTIN Hugo - 2026-2027',180,'001','Cotisation','Virement','MARTIN Hugo'],
+    ['Dépense','18/09/2026','Prélèvement URSSAF',24,'1106','URSAFF','Prélèvement',''],
+    ['Recette','30/09/2026','Cotisation adhérent GIRARD Lou - 2026-2027',180,'001','Cotisation','Chèque','GIRARD Lou'],
+    ['Recette','08/09/2026','Cotisation adhérent LEBRUN Jade - 2026-2027',130,'001','Cotisation','Virement','LEBRUN Sophie']
+  ];
+  return a.map(function (x, i) {
+    var amt = Math.round(x[3] * 100) * (x[0] === 'Dépense' ? -1 : 1);
+    return { id: String(500 + i), type: x[0], amount: amt, date: C.parseDate(x[1]), valeur: null, label: x[2], account: 'UGD',
+      catNum: x[4], catLib: x[5], mode: x[6], contact: x[7], rapproche: false, numPaiement: '' };
+  });
+}
+
+/* ---------- État ---------- */
+var S = {
+  bank: [], bankName: '', kali: [], kaliName: '', account: '', tol: 7,
+  result: null, edits: {}, filter: 'todo', demo: false, rules: loadRules(), cats: []
+};
+
+function loadRules() {
+  try { var r = JSON.parse(localStorage.getItem('ugd-kali-rules') || 'null'); if (Array.isArray(r)) return r; } catch (e) {}
+  return DEFAULT_RULES.map(function (r) { return Object.assign({}, r); });
+}
+function storeRules() { try { localStorage.setItem('ugd-kali-rules', JSON.stringify(S.rules)); } catch (e) {} }
+
+function buildCats() {
+  var seen = {}, out = [];
+  BASE_CATS.forEach(function (c) { var k = c[2] + c[0]; if (!seen[k]) { seen[k] = 1; out.push({ code: c[0], label: c[1], kind: c[2] }); } });
+  S.kali.forEach(function (k) {
+    if (!k.catNum) return;
+    var kind = k.amount < 0 ? D : R, key = kind + k.catNum;
+    if (!seen[key]) { seen[key] = 1; out.push({ code: k.catNum, label: k.catLib || k.catNum, kind: kind }); }
+  });
+  out.sort(function (a, b) { return a.code.localeCompare(b.code, 'fr', { numeric: false }); });
+  S.cats = out;
+}
+function catLabel(code, amount) {
+  var kind = amount < 0 ? D : R, c = S.cats.find(function (x) { return x.code === code && x.kind === kind; }) || S.cats.find(function (x) { return x.code === code; });
+  return c ? c.label : '';
+}
+function catOptions(amount, sel) {
+  var kind = amount < 0 ? D : R, other = kind === D ? R : D;
+  var h = '<option value="">— à choisir —</option>';
+  function grp(k, title) {
+    var g = '<optgroup label="' + title + '">';
+    S.cats.forEach(function (c) { if (c.kind === k) g += '<option value="' + esc(c.code) + '"' + (c.code === sel ? ' selected' : '') + '>' + esc(c.code + ' · ' + c.label) + '</option>'; });
+    return g + '</optgroup>';
+  }
+  h += grp(kind, kind === D ? 'Dépenses' : 'Recettes');
+  return h;
+}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function short(t) { return C.fmtDate(t).slice(0, 5); }
+
+/* ---------- Calcul ---------- */
+function recompute() {
+  buildCats();
+  S.result = C.reconcile(S.bank, S.kali, { account: S.account, tolerance: S.tol });
+  var learned = C.learnFrom(S.result);
+  S.result.lines.forEach(function (l) {
+    var e = S.edits[l.i] || (S.edits[l.i] = {});
+    l.include = e.include != null ? e.include : l.status === 'new';
+    l.outLabel = e.label != null ? e.label : l.label;
+    l.mode = e.mode != null ? e.mode : C.guessMode(l.label, l.amount);
+    l.comment = e.comment || '';
+    var sg = C.suggest(l, S.rules, learned);
+    l.sug = sg;
+    l.cat = e.cat != null ? e.cat : (sg ? sg.cat : '');
+  });
+  render();
+}
+
+/* ---------- Affichage ---------- */
+var STAT = {
+  new: ['À importer', 's-new'], check: ['À vérifier', 's-check'], match: ['Déjà saisi', 's-match'], group: ['Remise groupée', 's-group']
+};
+function visible(l) {
+  if (S.filter === 'all') return true;
+  if (S.filter === 'todo') return l.status === 'new' || l.status === 'check';
+  if (S.filter === 'done') return l.status === 'match' || l.status === 'group';
+  return l.status === S.filter;
+}
+
+function render() {
+  $('demoBanner').hidden = !S.demo;
+  var lines = S.result ? S.result.lines : [];
+  // Bilan / filtres
+  var n = { new: 0, check: 0, match: 0, group: 0 };
+  lines.forEach(function (l) { n[l.status]++; });
+  var chips = [
+    ['todo', 'À traiter', n.new + n.check, ''],
+    ['new', 'À importer', n.new, 's-new'], ['check', 'À vérifier', n.check, 's-check'],
+    ['done', 'Déjà dans Kalisport', n.match + n.group, 's-match'], ['all', 'Tout', lines.length, '']
+  ];
+  $('summary').innerHTML = chips.map(function (c) {
+    return '<button class="chip ' + c[3] + '" data-f="' + c[0] + '" aria-pressed="' + (S.filter === c[0]) + '">' + (c[3] ? '<span class="dot"></span>' : '') + esc(c[1]) + ' <span class="n">' + c[2] + '</span></button>';
+  }).join('');
+
+  var vis = lines.filter(visible);
+  if (!lines.length) {
+    $('rows').innerHTML = '<tr><td colspan="8" class="empty">Importez un relevé de compte pour voir ses opérations ici.</td></tr>';
+  } else if (!vis.length) {
+    $('rows').innerHTML = '<tr><td colspan="8" class="empty">Aucune opération dans ce filtre.</td></tr>';
+  } else {
+    $('rows').innerHTML = vis.map(rowHtml).join('');
+  }
+  var allOn = vis.length && vis.every(function (l) { return l.include; });
+  $('allBox').checked = !!allOn;
+  $('allBox').indeterminate = !allOn && vis.some(function (l) { return l.include; });
+
+  // Orphelins
+  var orph = S.result ? S.result.orphans : [];
+  $('orphCount').textContent = S.kali.length ? '(' + orph.length + ')' : '(importez l’export Kalisport)';
+  $('orphRows').innerHTML = orph.length ? orph.map(function (k) {
+    return '<tr><td class="date">' + C.fmtDate(k.date) + '</td><td>' + esc(k.label) + (k.contact ? ' <span class="muted">· ' + esc(k.contact) + '</span>' : '') + '</td><td>' + esc(k.mode) + '</td><td class="amt ' + (k.amount < 0 ? 'db' : 'cr') + '">' + C.fmtAmount(k.amount, true) + '</td></tr>';
+  }).join('') : '<tr><td colspan="4" class="empty">Rien à signaler.</td></tr>';
+
+  renderTotals();
+  renderRules();
+}
+
+function rowHtml(l) {
+  var st = STAT[l.status], why = '';
+  if (l.status === 'match') {
+    var k = l.matches[0];
+    why = 'Kalisport n°' + esc(k.id) + ' du ' + short(k.date) + ' : ' + esc(k.label) + (l.weak ? '<br><i>Rapproché sur le montant et la date seulement.</i>' : '');
+  } else if (l.status === 'group') {
+    why = l.matches.length + ' écritures Kalisport, même total :<ul>' + l.matches.map(function (k) {
+      return '<li>' + short(k.date) + ' · ' + esc(k.contact || k.label) + ' · ' + C.fmtAmount(k.amount) + '</li>';
+    }).join('') + '</ul>';
+  } else if (l.status === 'check') {
+    var p = l.probable;
+    why = 'Même montant dans Kalisport le ' + C.fmtDate(p.date) + ' : ' + esc(p.label) + '. Si c’est la même opération, laissez décoché.';
+  } else if (!S.kali.length) {
+    why = 'Pas encore comparé à Kalisport.';
+  }
+  var sugTxt = '';
+  if (l.sug && l.cat === l.sug.cat) sugTxt = '<div class="sug">Proposée : ' + esc(l.sug.src) + '</div>';
+  else if (l.cat) sugTxt = '<div class="sug"><button class="link" data-act="remember" data-i="' + l.i + '">mémoriser</button></div>';
+  return '<tr data-i="' + l.i + '" class="' + (l.include ? '' : 'off') + '">' +
+    '<td><input type="checkbox" data-k="include" ' + (l.include ? 'checked' : '') + ' aria-label="Inclure dans l’export"></td>' +
+    '<td class="date">' + C.fmtDate(l.date) + '</td>' +
+    '<td><input type="text" class="lab" data-k="label" value="' + esc(l.outLabel) + '" aria-label="Libellé"></td>' +
+    '<td class="amt ' + (l.amount < 0 ? 'db' : 'cr') + '">' + C.fmtAmount(l.amount, true) + '</td>' +
+    '<td><span class="pill ' + st[1] + '"><span class="dot ' + st[1] + '"></span>' + st[0] + '</span>' + (why ? '<div class="why">' + why + '</div>' : '') + '</td>' +
+    '<td><select data-k="cat" aria-label="Catégorie">' + catOptions(l.amount, l.cat) + '</select>' + sugTxt + '</td>' +
+    '<td><select data-k="mode" aria-label="Mode de règlement">' + MODES.map(function (m) { return '<option' + (m === l.mode ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select></td>' +
+    '<td><input type="text" data-k="comment" value="' + esc(l.comment) + '" aria-label="Commentaire" style="width:150px"></td>' +
+    '</tr>';
+}
+
+function selected() { return S.result ? S.result.lines.filter(function (l) { return l.include; }) : []; }
+function renderTotals() {
+  var sel = selected(), cr = 0, db = 0, nc = 0;
+  sel.forEach(function (l) { if (l.amount > 0) cr += l.amount; else db += l.amount; if (!l.cat) nc++; });
+  $('tCount').textContent = sel.length;
+  $('tCr').textContent = C.fmtAmount(cr, true);
+  $('tDb').textContent = C.fmtAmount(db, true);
+  $('tNoCat').textContent = nc;
+  $('dlXlsx').disabled = $('dlCsv').disabled = !sel.length;
+}
+
+function renderRules() {
+  var allCats = S.cats.filter(function (c, i, a) { return a.findIndex(function (x) { return x.code === c.code && x.kind === c.kind; }) === i; });
+  $('rules').innerHTML = S.rules.map(function (r, i) {
+    var kinds = r.sign === '+' ? [R] : r.sign === '-' ? [D] : [D, R];
+    var opts = '<option value="">— catégorie —</option>' + kinds.map(function (k) {
+      return '<optgroup label="' + (k === D ? 'Dépenses' : 'Recettes') + '">' + allCats.filter(function (c) { return c.kind === k; }).map(function (c) {
+        return '<option value="' + esc(c.code) + '"' + (c.code === r.cat ? ' selected' : '') + '>' + esc(c.code + ' · ' + c.label) + '</option>';
+      }).join('') + '</optgroup>';
+    }).join('');
+    return '<div class="rule" data-r="' + i + '">' +
+      '<input type="text" data-rk="key" value="' + esc(r.key) + '" placeholder="mot du libellé, ex. URSSAF" aria-label="Le libellé contient">' +
+      '<select data-rk="sign" aria-label="Sens"><option value=""' + (!r.sign ? ' selected' : '') + '>les deux</option><option value="-"' + (r.sign === '-' ? ' selected' : '') + '>dépense</option><option value="+"' + (r.sign === '+' ? ' selected' : '') + '>recette</option></select>' +
+      '<select data-rk="cat" aria-label="Catégorie">' + opts + '</select>' +
+      '<button data-rdel="' + i + '" aria-label="Supprimer la règle">Supprimer</button></div>';
+  }).join('') || '<p class="muted small">Aucune règle.</p>';
+}
+
+/* ---------- Événements du tableau ---------- */
+$('rows').addEventListener('change', function (e) {
+  var tr = e.target.closest('tr[data-i]'); if (!tr) return;
+  var i = +tr.dataset.i, k = e.target.dataset.k, ed = S.edits[i] || (S.edits[i] = {});
+  var l = S.result.lines.find(function (x) { return x.i === i; });
+  if (k === 'include') { ed.include = e.target.checked; l.include = ed.include; tr.classList.toggle('off', !l.include); renderTotals(); return; }
+  if (k === 'label') { ed.label = e.target.value; l.outLabel = ed.label; return; }
+  if (k === 'comment') { ed.comment = e.target.value; l.comment = ed.comment; return; }
+  if (k === 'mode') { ed.mode = e.target.value; l.mode = ed.mode; return; }
+  if (k === 'cat') {
+    ed.cat = e.target.value; l.cat = ed.cat;
+    var td = e.target.parentNode, old = td.querySelector('.sug'); if (old) old.remove();
+    if (l.cat) td.insertAdjacentHTML('beforeend', '<div class="sug"><button class="link" data-act="remember" data-i="' + i + '">mémoriser</button></div>');
+    renderTotals();
+  }
+});
+$('rows').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-act="remember"]'); if (!b) return;
+  var i = +b.dataset.i, l = S.result.lines.find(function (x) { return x.i === i; });
+  var key = C.ruleKey(l.label) || l.label;
+  S.rules.unshift({ key: key, sign: l.amount < 0 ? '-' : '+', cat: l.cat });
+  storeRules();
+  // les lignes sans choix manuel profitent de la nouvelle règle
+  Object.keys(S.edits).forEach(function (j) { if (+j !== i && S.edits[j].cat === '') delete S.edits[j].cat; });
+  $('rulesPanel').open = true;
+  recompute();
+  toast('Règle « ' + key + ' » ajoutée. Vous pouvez l’ajuster plus bas.');
+});
+$('summary').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-f]'); if (!b) return;
+  S.filter = b.dataset.f; render();
+});
+$('allBox').addEventListener('change', function (e) {
+  if (!S.result) return;
+  S.result.lines.filter(visible).forEach(function (l) { l.include = e.target.checked; (S.edits[l.i] || (S.edits[l.i] = {})).include = l.include; });
+  render();
+});
+
+/* ---------- Règles ---------- */
+$('rules').addEventListener('change', function (e) {
+  var d = e.target.closest('[data-r]'); if (!d) return;
+  var r = S.rules[+d.dataset.r]; r[e.target.dataset.rk] = e.target.value.trim ? e.target.value.trim() : e.target.value;
+  storeRules();
+  if (e.target.dataset.rk === 'sign') renderRules();
+  softRecompute();
+});
+$('rules').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-rdel]'); if (!b) return;
+  S.rules.splice(+b.dataset.rdel, 1); storeRules(); softRecompute();
+});
+$('addRule').addEventListener('click', function () { S.rules.push({ key: '', sign: '-', cat: '' }); renderRules(); var ins = $('rules').querySelectorAll('input'); if (ins.length) ins[ins.length - 1].focus(); });
+$('resetRules').addEventListener('click', function () { S.rules = DEFAULT_RULES.map(function (r) { return Object.assign({}, r); }); storeRules(); softRecompute(); toast('Règles par défaut rétablies.'); });
+$('saveRules').addEventListener('click', function () {
+  save('regles-categories-kalisport.json', JSON.stringify(S.rules, null, 2), 'application/json');
+});
+$('loadRules').addEventListener('change', function (e) {
+  var f = e.target.files[0]; if (!f) return;
+  f.text().then(function (t) {
+    var r = JSON.parse(t); if (!Array.isArray(r)) throw new Error();
+    S.rules = r.filter(function (x) { return x && typeof x.key === 'string'; }); storeRules(); softRecompute(); toast(S.rules.length + ' règles chargées.');
+  }).catch(function () { toast('Ce fichier ne contient pas de règles lisibles.'); });
+  e.target.value = '';
+});
+function softRecompute() { if (S.result) recompute(); else renderRules(); }
+
+/* ---------- Lecture des fichiers ---------- */
+function decode(buf) {
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+  catch (e) { return new TextDecoder('windows-1252').decode(buf); }
+}
+function sheetRows(buf) {
+  if (typeof XLSX === 'undefined') throw new Error("La lecture des fichiers Excel n'est pas disponible (bibliothèque non chargée). Essayez en CSV.");
+  var wb = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true });
+  var best = null;
+  wb.SheetNames.forEach(function (n) {
+    var rows = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: '' });
+    if (!best || rows.length > best.length) best = rows;
+  });
+  return best || [];
+}
+function readBankFile(f) {
+  return f.arrayBuffer().then(function (buf) {
+    var ext = (f.name.split('.').pop() || '').toLowerCase();
+    if (ext === 'ofx' || ext === 'qfx') return C.bankFromOFX(decode(buf));
+    if (ext === 'xls' || ext === 'xlsx') return C.bankFromRows(sheetRows(buf));
+    var text = decode(buf);
+    if (/<OFX>|<STMTTRN>/i.test(text)) return C.bankFromOFX(text);
+    try { return C.bankFromRows(C.parseCSV(text)); }
+    catch (err) { var t = C.bankFromText(text); if (t.length) return t; throw err; }
+  });
+}
+function readKaliFile(f) {
+  return f.arrayBuffer().then(function (buf) {
+    var ext = (f.name.split('.').pop() || '').toLowerCase();
+    var rows = (ext === 'csv' || ext === 'txt') ? C.parseCSV(decode(buf)) : sheetRows(buf);
+    return C.kaliFromRows(rows);
+  });
+}
+
+function leaveDemo() {
+  if (!S.demo) return;
+  S.demo = false; S.bank = []; S.kali = []; S.bankName = S.kaliName = ''; S.edits = {}; S.account = '';
+  $('account').innerHTML = '';
+}
+function setBank(list, name) {
+  if (!list.length) throw new Error("Aucune opération trouvée dans ce relevé.");
+  leaveDemo();
+  S.bank = list.sort(function (a, b) { return b.date - a.date; }); S.bankName = name; S.edits = {}; S.filter = 'todo';
+  $('bankErr').textContent = '';
+  showInfo(); recompute();
+}
+function setKali(list, name) {
+  if (!list.length) throw new Error("Aucune écriture trouvée dans cet export.");
+  leaveDemo();
+  S.kali = list; S.kaliName = name;
+  var accs = C.accountsOf(list);
+  S.account = C.defaultAccount(accs);
+  $('account').innerHTML = accs.map(function (a) { return '<option value="' + esc(a.name) + '"' + (a.name === S.account ? ' selected' : '') + '>' + esc(a.name || '(sans compte)') + ' · ' + a.count + ' écritures</option>'; }).join('');
+  $('kaliErr').textContent = '';
+  showInfo(); recompute();
+}
+function showInfo() {
+  if (S.bank.length) {
+    var ds = S.bank.map(function (b) { return b.date; });
+    var cr = 0, db = 0; S.bank.forEach(function (b) { if (b.amount > 0) cr += b.amount; else db += b.amount; });
+    $('bankInfo').innerHTML = '<b>' + esc(S.bankName) + '</b><span class="muted">' + S.bank.length + ' opérations du ' + C.fmtDate(Math.min.apply(null, ds)) + ' au ' + C.fmtDate(Math.max.apply(null, ds)) +
+      ' · <span class="cr num">' + C.fmtAmount(cr, true) + '</span> · <span class="db num">' + C.fmtAmount(db, true) + '</span></span>';
+  } else $('bankInfo').innerHTML = '';
+  if (S.kali.length) {
+    $('kaliInfo').innerHTML = '<b>' + esc(S.kaliName) + '</b><span class="muted">' + S.kali.length + ' écritures lues</span>';
+  } else $('kaliInfo').innerHTML = '';
+  $('ledgerTitle').textContent = S.bank.length ? 'Opérations du relevé (' + S.bank.length + ')' : 'Opérations du relevé';
+}
+
+function wireDrop(dropId, inputId, handler, errId) {
+  var drop = $(dropId), inp = $(inputId);
+  function go(f) {
+    if (!f) return;
+    $(errId).textContent = '';
+    handler(f).catch(function (err) { $(errId).textContent = (err && err.message) || 'Fichier illisible.'; });
+  }
+  inp.addEventListener('change', function () { go(inp.files[0]); inp.value = ''; });
+  drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', function () { drop.classList.remove('over'); });
+  drop.addEventListener('drop', function (e) { e.preventDefault(); drop.classList.remove('over'); go(e.dataTransfer.files[0]); });
+}
+wireDrop('dropBank', 'fileBank', function (f) { return readBankFile(f).then(function (l) { setBank(l, f.name); }); }, 'bankErr');
+wireDrop('dropKali', 'fileKali', function (f) { return readKaliFile(f).then(function (l) { setKali(l, f.name); }); }, 'kaliErr');
+$('pasteGo').addEventListener('click', function () {
+  try {
+    var l = C.bankFromText($('pasteText').value);
+    if (!l.length) throw new Error("Je ne reconnais aucune ligne. Chaque ligne doit commencer par une date (JJ/MM/AAAA) et contenir un montant (ex. -899,66 EUR).");
+    setBank(l, 'Texte collé'); $('pasteBox').open = false;
+  } catch (err) { $('bankErr').textContent = err.message; }
+});
+$('account').addEventListener('change', function (e) { S.account = e.target.value; recompute(); });
+$('tol').addEventListener('change', function (e) { S.tol = +e.target.value; recompute(); });
+
+/* ---------- Export ---------- */
+var HEAD = ['Date', 'Date de valeur', 'Libellé', 'Montant', 'Débit', 'Crédit', 'Code catégorie', 'Catégorie', 'Mode de règlement', 'Commentaire'];
+function exportRows() {
+  return selected().slice().sort(function (a, b) { return a.date - b.date; }).map(function (l) {
+    return [C.fmtDate(l.date), C.fmtDate(l.valeur || l.date), l.outLabel, l.amount / 100,
+      l.amount < 0 ? -l.amount / 100 : '', l.amount > 0 ? l.amount / 100 : '', l.cat, l.cat ? catLabel(l.cat, l.amount) : '', l.mode, l.comment];
+  });
+}
+function period() {
+  var s = selected(); if (!s.length) return '';
+  var ds = s.map(function (l) { return l.date; });
+  function iso(t) { return new Date(t).toISOString().slice(0, 10); }
+  return iso(Math.min.apply(null, ds)) + '_' + iso(Math.max.apply(null, ds));
+}
+$('dlXlsx').addEventListener('click', function () {
+  if (typeof XLSX === 'undefined') { toast('Export Excel indisponible ici, utilisez le CSV.'); return; }
+  var rows = exportRows();
+  var ws = XLSX.utils.aoa_to_sheet([HEAD].concat(rows));
+  for (var r = 1; r <= rows.length; r++) ['D', 'E', 'F'].forEach(function (c) { var cell = ws[c + (r + 1)]; if (cell && cell.t === 'n') cell.z = '0.00'; });
+  ws['!cols'] = [{ wch: 11 }, { wch: 11 }, { wch: 44 }, { wch: 11 }, { wch: 10 }, { wch: 10 }, { wch: 9 }, { wch: 30 }, { wch: 16 }, { wch: 30 }];
+  var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Import Kalisport');
+  var out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  save('import-kalisport_' + period() + '.xlsx', new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+});
+$('dlCsv').addEventListener('click', function () {
+  function n(v) { return v === '' ? '' : v.toFixed(2).replace('.', ','); }
+  function q(v) { v = String(v == null ? '' : v); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  var lines = [HEAD.join(';')].concat(exportRows().map(function (r) {
+    return [r[0], r[1], q(r[2]), n(r[3]), n(r[4]), n(r[5]), q(r[6]), q(r[7]), q(r[8]), q(r[9])].join(';');
+  }));
+  save('import-kalisport_' + period() + '.csv', new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+});
+
+var dlCap = null;
+try { if (window.claude && window.claude.use) window.claude.use('downloads').then(function (d) { dlCap = d; }).catch(function () {}); } catch (e) {}
+function save(name, data, type) {
+  if (dlCap) {
+    dlCap.save({ filename: name, data: data }).then(function () { toast('Fichier « ' + name + ' » enregistré.'); }).catch(function (err) {
+      if (err && err.code === 'declined') toast('Téléchargement annulé.');
+      else if (err && err.code === 'rate_limited') toast('Une demande de téléchargement est déjà ouverte.');
+      else fallbackSave(name, data, type);
+    });
+  } else fallbackSave(name, data, type);
+}
+function fallbackSave(name, data, type) {
+  try {
+    var blob = data instanceof Blob ? data : new Blob([data], { type: type || 'application/octet-stream' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    toast('Fichier « ' + name + ' » préparé.');
+  } catch (e) { toast('Le téléchargement n’est pas possible dans cette vue.'); }
+}
+var tt;
+function toast(msg) { $('toast').textContent = msg; clearTimeout(tt); tt = setTimeout(function () { $('toast').textContent = ''; }, 6000); }
+
+/* ---------- Démarrage sur l'exemple ---------- */
+S.demo = true; S.bank = exBank(); S.kali = exKali(); S.bankName = 'Exemple de relevé'; S.kaliName = 'Exemple d’export Kalisport'; S.account = 'UGD';
+$('account').innerHTML = '<option value="UGD">UGD · exemple</option>';
+showInfo(); recompute();
+})();
+</script>
+
+</body>
+</html>
