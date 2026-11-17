@@ -391,9 +391,12 @@ async function connectShared(){
     },err=>{ clearTimeout(t); setSync("err","Planning partagé indisponible : copie locale affichée"); });
   }catch(e){}
 }
+/* Le bouton « Modifier le planning » reste caché : on le fait apparaître en ajoutant #modifier à l'adresse de la page */
+const allowEdit=()=>location.hash==="#modifier";
+window.addEventListener("hashchange",()=>{ applyMode(); });
 function applyMode(){
   document.body.classList.toggle("ro",!editMode);
-  $("#b-unlock").hidden=!canWrite||editMode;
+  $("#b-unlock").hidden=!canWrite||editMode||!allowEdit();
   if(!canWrite&&editMode){ editMode=false; document.body.classList.add("ro"); }
 }
 
