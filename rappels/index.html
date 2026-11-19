@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mes rappels</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--ink:#1f2328;--mute:#6b7280;--line:#e5e3dc;--accent:#2f6f5e;--accent-ink:#fff;--late:#b42318;--late-bg:#fdecea;--soon:#a15c07;--soon-bg:#fff4e0}
+@media (prefers-color-scheme:dark){:root{--bg:#161815;--card:#20231f;--ink:#ecece6;--mute:#9a9f95;--line:#33372f;--accent:#5fb59d;--accent-ink:#0f1a16;--late:#ff8a7a;--late-bg:#3a1f1b;--soon:#f0b45a;--soon-bg:#3a2d15}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:640px;margin:0 auto;padding:24px 16px 80px}
+h1{font-size:26px;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 20px;font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.row{display:flex;gap:8px;align-items:center}
+input[type=text],input[type=datetime-local]{width:100%;font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+input:focus{outline:2px solid var(--accent);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 12px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button.mic{padding:9px 11px}
+button.mic.on{background:var(--late-bg);border-color:var(--late);color:var(--late)}
+button.chip{padding:5px 10px;font-size:13px;border-radius:999px;color:var(--mute)}
+button.chip:hover{color:var(--ink);border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}
+.when{margin-top:10px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:26px 0 8px}
+.task{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+.task input[type=checkbox]{width:22px;height:22px;margin-top:2px;accent-color:var(--accent);flex:none}
+.task .t{flex:1;min-width:0;overflow-wrap:anywhere}
+.task .d{font-size:13px;color:var(--mute);margin-top:2px}
+.task.late{border-color:var(--late);background:var(--late-bg)}
+.task.late .d{color:var(--late);font-weight:600}
+.task.soon .d{color:var(--soon);font-weight:600}
+.task.done .t{text-decoration:line-through;color:var(--mute)}
+.x{border:none;background:none;color:var(--mute);padding:2px 6px;font-size:18px}
+.empty{color:var(--mute);text-align:center;padding:26px 0;font-size:15px}
+.banner{position:sticky;top:8px;z-index:5;background:var(--late);color:#fff;border-radius:14px;padding:14px;margin-bottom:16px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.banner b{display:block;font-size:13px;opacity:.85;text-transform:uppercase;letter-spacing:.05em}
+.banner .tt{font-size:19px;font-weight:600;margin:2px 0 10px}
+.banner button{background:#fff;color:#7a1a10;border:none;font-weight:600}
+.banner button.ghost{background:rgba(255,255,255,.18);color:#fff}
+button.chip.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;margin-right:7px;vertical-align:1px;color:#fff}
+.badge.P1{background:#b42318}.badge.P3{background:#c27a0a}.badge.PS{background:#2f6f5e}
+.bigmic{width:100%;font-size:19px;font-weight:600;padding:20px 16px;border-radius:16px;border:none;background:var(--accent);color:var(--accent-ink);margin-bottom:12px}
+.bigmic.on{background:var(--late);color:#fff;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 10px rgba(180,35,24,.18)}}
+.vmsg{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14.5px}
+.note{font-size:12.5px;color:var(--mute);margin-top:28px;text-align:center}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+  <h1>Mes rappels</h1>
+  <p class="sub">Dis-moi une tâche à voix haute, par exemple « rappelle-moi d'appeler le trésorier demain à 9h ».</p>
+  <div id="app"></div>
+  <p class="note">Les rappels s'affichent tant que cette page est ouverte (onglet ou appli).</p>
+</main>
+<script type="application/json" id="state">{"tasks":[]}</script>
+<script>
+(function(){
+  var state = {tasks:[]};
+  try { state = JSON.parse(document.getElementById('state').textContent) || state; } catch(e){}
+  var LS='rappels-v1', artifactCap=null, saveTimer=null, snoozed={}, dictation=null, listening=false;
+  var app=document.getElementById('app');
+  var draft={text:'',due:'',prio:''};
+  var PRIO={P1:{ms:86400000,label:'P1 · 1 jour'},P3:{ms:259200000,label:'P3 · 3 jours'},PS:{ms:604800000,label:'PS · 1 semaine'}};
+
+  // Repli : si la page ne peut pas se republier, on garde les tâches dans le navigateur
+  try { var ls=localStorage.getItem(LS); if(ls && !state.tasks.length){ var p=JSON.parse(ls); if(p&&p.tasks) state=p; } } catch(e){}
+
+  function uid(){return Math.random().toString(36).slice(2,10)}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function pad(n){return String(n).padStart(2,'0')}
+  function toLocalInput(ms){var d=new Date(ms);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())}
+  function fmt(ms){
+    var d=new Date(ms), now=new Date(), t=pad(d.getHours())+'h'+pad(d.getMinutes());
+    var day0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+    var diff=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()-day0)/86400000);
+    if(diff===0) return "Aujourd'hui à "+t;
+    if(diff===1) return 'Demain à '+t;
+    if(diff===-1) return 'Hier à '+t;
+    return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+' à '+t;
+  }
+
+  // ---- persistance ----
+  function buildDoc(){
+    var c=document.documentElement.cloneNode(true);
+    c.querySelector('#app').innerHTML='';
+    c.querySelector('#state').textContent=JSON.stringify(state).replace(/</g,'\\u003c');
+    return '<!DOCTYPE html>\n'+c.outerHTML;
+  }
+  function save(){
+    try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){}
+    if(!artifactCap) return;
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(function(){
+      try{ Promise.resolve(artifactCap.publish(buildDoc())).catch(function(){}); }catch(e){}
+    },1500);
+  }
+
+  // ---- actions ----
+  function addTask(){
+    var text=draft.text.trim(); if(!text) return;
+    var due=draft.due?new Date(draft.due).getTime():null;
+    if(due!==null && isNaN(due)) due=null;
+    var prio=draft.prio||null;
+    if(due===null && prio) due=Date.now()+PRIO[prio].ms;
+    state.tasks.push({id:uid(),text:text,due:due,prio:prio,done:false,created:Date.now()});
+    draft={text:'',due:'',prio:''}; save(); render(true);
+  }
+  function setDraftIn(min){var d=new Date(Date.now()+min*60000);draft.due=toLocalInput(d.getTime());render(false);}
+  function setDraftTomorrow(){var d=new Date();d.setDate(d.getDate()+1);d.setHours(9,0,0,0);draft.due=toLocalInput(d.getTime());render(false);}
+  function setDraftToday18(){var d=new Date();d.setHours(18,0,0,0);if(d<=new Date())d.setDate(d.getDate()+1);draft.due=toLocalInput(d.getTime());render(false);}
+  function find(id){return state.tasks.filter(function(t){return t.id===id})[0]}
+  function toggle(id){var t=find(id);if(!t)return;t.done=!t.done;t.doneAt=t.done?Date.now():null;delete snoozed[id];save();render(false);}
+  function del(id){state.tasks=state.tasks.filter(function(t){return t.id!==id});save();render(false);}
+  function snooze(id,min){var t=find(id);if(!t)return;t.due=Date.now()+min*60000;delete snoozed[id];save();render(false);}
+  function dismiss(id){snoozed[id]=Date.now()+5*60000;render(false);}
+
+  // ---- rendu ----
+  function taskHTML(t,cls){
+    var d=t.due?'<div class="d">'+esc(cls==='late'?'En retard · '+fmt(t.due):fmt(t.due))+'</div>':'';
+    return '<div class="task '+cls+'"><input type="checkbox" data-a="toggle" data-id="'+t.id+'"'+(t.done?' checked':'')+' aria-label="Terminé">'+
+      '<div class="t">'+(t.prio?'<span class="badge '+t.prio+'">'+t.prio+'</span>':'')+esc(t.text)+d+'</div><button class="x" data-a="del" data-id="'+t.id+'" aria-label="Supprimer">×</button></div>';
+  }
+  function dueTasks(){
+    var now=Date.now();
+    return state.tasks.filter(function(t){return !t.done&&t.due&&t.due<=now&&!(snoozed[t.id]>now)});
+  }
+  function render(focusInput){
+    var now=Date.now();
+    var open=state.tasks.filter(function(t){return !t.done});
+    var late=open.filter(function(t){return t.due&&t.due<=now}).sort(function(a,b){return a.due-b.due});
+    var upcoming=open.filter(function(t){return t.due&&t.due>now}).sort(function(a,b){return a.due-b.due});
+    var none=open.filter(function(t){return !t.due});
+    var done=state.tasks.filter(function(t){return t.done}).sort(function(a,b){return (b.doneAt||0)-(a.doneAt||0)}).slice(0,8);
+    var h='';
+    var due=dueTasks();
+    if(due.length){
+      var t=due[0];
+      h+='<div class="banner" role="alert"><b>⏰ Rappel'+(due.length>1?' ('+due.length+' tâches)':'')+'</b><div class="tt">'+esc(t.text)+'</div>'+
+        '<div class="row" style="flex-wrap:wrap"><button data-a="toggle" data-id="'+t.id+'">✓ C\'est fait</button>'+
+        '<button class="ghost" data-a="snooze" data-m="10" data-id="'+t.id+'">+10 min</button>'+
+        '<button class="ghost" data-a="snooze" data-m="60" data-id="'+t.id+'">+1 h</button>'+
+        '<button class="ghost" data-a="dismiss" data-id="'+t.id+'">Plus tard</button></div></div>';
+    }
+    h+='<button class="bigmic'+(listening?' on':'')+'" data-a="mic">'+(listening?'🎙️ Je t\'écoute… (touche pour terminer)':'🎤 Dis-moi une tâche')+'</button>';
+    if(voiceMsg) h+='<div class="vmsg">'+esc(voiceMsg)+'</div>';
+    h+='<div class="card"><div class="row"><input type="text" id="txt" placeholder="…ou écris-la ici" autocomplete="off" value="'+esc(draft.text)+'">'+
+      '<button class="primary" data-a="add">Ajouter</button></div>'+
+      '<div class="when"><input type="datetime-local" id="due" value="'+esc(draft.due)+'" aria-label="Me le rappeler le"></div>'+
+      '<div class="chips"><span style="font-size:13px;color:var(--mute);align-self:center">Priorité :</span>'+
+      ['P1','P3','PS'].map(function(k){return '<button class="chip'+(draft.prio===k?' sel':'')+'" data-a="prio" data-p="'+k+'" title="'+PRIO[k].label+'">'+PRIO[k].label+'</button>'}).join('')+'</div>'+
+      '<div class="chips"><button class="chip" data-a="q15">dans 15 min</button><button class="chip" data-a="q60">dans 1 h</button><button class="chip" data-a="q18">ce soir 18h</button><button class="chip" data-a="qtom">demain 9h</button>'+
+      (draft.due?'<button class="chip" data-a="qclear">sans heure</button>':'')+'</div></div>';
+    if(late.length) h+='<h2>À faire maintenant</h2>'+late.map(function(t){return taskHTML(t,'late')}).join('');
+    if(upcoming.length) h+='<h2>À venir</h2>'+upcoming.map(function(t){return taskHTML(t,(t.due-now<3600000)?'soon':'')}).join('');
+    if(none.length) h+='<h2>Sans échéance</h2>'+none.map(function(t){return taskHTML(t,'')}).join('');
+    if(!open.length) h+='<div class="empty">Rien à faire. Profites-en ✨</div>';
+    if(done.length) h+='<h2>Terminées</h2>'+done.map(function(t){return taskHTML(t,'done')}).join('');
+    app.innerHTML=h;
+    if(focusInput){var i=document.getElementById('txt'); if(i) i.focus();}
+  }
+
+  // ---- événements ----
+  app.addEventListener('input',function(e){
+    if(e.target.id==='txt') draft.text=e.target.value;
+    if(e.target.id==='due') draft.due=e.target.value;
+  });
+  app.addEventListener('change',function(e){
+    if(e.target.id==='due'){draft.due=e.target.value;render(false);}
+    if(e.target.dataset&&e.target.dataset.a==='toggle') toggle(e.target.dataset.id);
+  });
+  app.addEventListener('keydown',function(e){ if(e.key==='Enter'&&e.target.id==='txt'){e.preventDefault();addTask();} });
+  app.addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b||!b.dataset.a) return;
+    var a=b.dataset.a, id=b.dataset.id;
+    if(a==='add') addTask();
+    else if(a==='del') del(id);
+    else if(a==='toggle') toggle(id);
+    else if(a==='snooze') snooze(id,+b.dataset.m);
+    else if(a==='dismiss') dismiss(id);
+    else if(a==='q15') setDraftIn(15);
+    else if(a==='q60') setDraftIn(60);
+    else if(a==='q18') setDraftToday18();
+    else if(a==='qtom') setDraftTomorrow();
+    else if(a==='qclear'){draft.due='';render(false);}
+    else if(a==='mic') toggleMic();
+    else if(a==='prio'){draft.prio=(draft.prio===b.dataset.p)?'':b.dataset.p;render(false);}
+  });
+
+  // ---- voix ----
+  var voiceMsg='', rec=null, committed='', webSR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  function setMsg(m){voiceMsg=m;render(false);}
+  function speak(txt){
+    try{ if(!window.speechSynthesis) return; var u=new SpeechSynthesisUtterance(txt); u.lang='fr-FR'; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);}catch(e){}
+  }
+  var NUMS={un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,onze:11,douze:12,quinze:15,vingt:20,trente:30,quarante:40,cinquante:50,soixante:60};
+  function num(w){return /^\d+$/.test(w)?+w:(NUMS[w]||null)}
+  function parseVoice(raw){
+    var s=' '+raw.toLowerCase().replace(/[’]/g,"'")+' ', now=new Date(), due=null, m, addMin=null, dayOff=null, h=null, mi=0, defH=null, soir=false;
+    function cut(re){var r=s.match(re); if(r) s=s.replace(re,' '); return r;}
+    if(m=cut(/ dans (?:une )?demi[- ]heure /)) addMin=30;
+    else if(m=cut(/ dans un quart d'heure /)) addMin=15;
+    else if(m=cut(/ dans (\d+|[a-zéè]+) (minutes?|min|heures?|jours?|semaines?) /)){
+      var n=num(m[1]); if(n){var u=m[2].charAt(0)==='m'?1:(m[2].charAt(0)==='h'?60:(m[2].charAt(0)==='j'?1440:10080)); addMin=n*u;}
+    }
+    if(m=cut(/ apr[eè]s-demain /)) dayOff=2;
+    else if(m=cut(/ demain /)) {dayOff=1;defH=9;}
+    var wd={dimanche:0,lundi:1,mardi:2,mercredi:3,jeudi:4,vendredi:5,samedi:6};
+    if(dayOff===null && (m=cut(/ (lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)( prochain)? /))){dayOff=((wd[m[1]]-now.getDay()+7)%7)||7;defH=9;}
+    if(m=cut(/ ce soir /)){dayOff=0;defH=18;soir=true;}
+    if(m=cut(/ ce midi /)){dayOff=0;defH=12;}
+    if(m=cut(/ cet apr[eè]s-midi /)){dayOff=0;defH=14;}
+    if(m=cut(/ [àa] midi /)){h=12;}
+    else if(m=cut(/ [àa] (\d{1,2}) ?(?:h|heures?|:) ?(\d{2})? /)){h=+m[1];mi=m[2]?+m[2]:0;}
+    if(addMin!==null){ due=Date.now()+addMin*60000; }
+    else if(dayOff!==null||h!==null){
+      var d=new Date(); d.setSeconds(0,0); d.setDate(d.getDate()+(dayOff||0));
+      var hh=h!==null?h:defH; if(hh===null) hh=9;
+      if(soir&&hh<12) hh+=12;
+      d.setHours(hh,mi,0,0);
+      if(dayOff===null && d.getTime()<=Date.now()) d.setDate(d.getDate()+1);
+      due=d.getTime();
+    }
+    var prio=null;
+    if(cut(/ (?:ps|p s|p\.s\.?|priorit[ée] (?:s|semaine|hebdo(?:madaire)?))(?=[\s,.:;!?])/)) prio='PS';
+    else if(cut(/ (?:p ?3|p ?trois|pe ?trois|priorit[ée] (?:3|trois))(?=[\s,.:;!?])/)) prio='P3';
+    else if(cut(/ (?:p ?1|p ?un|pe ?un|priorit[ée] (?:1|une?))(?=[\s,.:;!?])/)) prio='P1';
+    if(due===null && prio) due=Date.now()+PRIO[prio].ms;
+    var t=s.replace(/^\s*(?:peux-tu|tu peux )?(?:me )?rappelle(?:r)?[- ]moi (?:de |d'|que je dois |que je |que )?/,' ')
+           .replace(/^\s*(?:n'oublie pas (?:de |d')|il faut que je |il faut |je dois |faut que je |ajoute (?:la t[âa]che )?)/,' ')
+           .replace(/\s+/g,' ').replace(/^[\s,.:;-]+|[\s,.:;-]+$/g,'');
+    if(t) t=t.charAt(0).toUpperCase()+t.slice(1);
+    return {text:t,due:due,prio:prio};
+  }
+  function submitVoice(){
+    var raw=(draft.text||'').trim(); draft.text=''; committed='';
+    if(!raw){render(false);return;}
+    var p=parseVoice(raw), text=p.text||raw;
+    state.tasks.push({id:uid(),text:text,due:p.due,prio:p.prio,done:false,created:Date.now()});
+    save();
+    var when=p.due?fmt(p.due):null;
+    voiceMsg='✓ « '+text+' » — '+(when?'je te le rappelle · '+when.toLowerCase()+'.':"noté, sans heure. Ajoute par ex. « dans une heure » ou « demain à 9h » pour être alerté.");
+    render(false);
+    speak("C'est noté. "+(when?"Je te le rappelle "+when.toLowerCase()+".":""));
+  }
+  function stopVoice(){
+    if(dictation){try{dictation.stop()}catch(e){}}
+    if(rec){try{rec.stop()}catch(e){}}
+  }
+  function startWeb(){
+    try{
+      rec=new webSR(); rec.lang='fr-FR'; rec.interimResults=true; rec.continuous=false;
+      rec.onstart=function(){listening=true;voiceMsg='';render(false);};
+      rec.onresult=function(ev){var s='';for(var i=0;i<ev.results.length;i++){s+=ev.results[i][0].transcript+' ';}draft.text=s.trim();};
+      rec.onerror=function(ev){listening=false;draft.text='';setMsg((ev.error==='not-allowed'||ev.error==='service-not-allowed')?"Le micro est bloqué sur cette page. Autorise-le, ou ouvre la page dans Chrome.":"Je n'ai pas bien entendu, réessaie.");};
+      rec.onend=function(){var was=listening;listening=false;if(was)submitVoice();};
+      rec.start();
+    }catch(e){setMsg("Impossible de lancer le micro ici.");}
+  }
+  function toggleMic(){
+    if(listening){stopVoice();return;}
+    committed=''; draft.text='';
+    if(dictation){
+      try{var p=dictation.start(); if(p&&p.catch) p.catch(function(){setMsg("Micro refusé. Autorise-le, ou écris ta tâche.");});}catch(e){}
+      return;
+    }
+    if(webSR){startWeb();return;}
+    setMsg("La dictée n'est pas disponible ici. Ouvre la page dans Chrome ou dans l'appli Claude, ou écris ta tâche.");
+  }
+  function initDictation(){
+    try{
+      Promise.resolve(window.claude&&window.claude.use?window.claude.use('dictation'):null).then(function(d){
+        if(!d) return; dictation=d;
+        d.onPartial(function(r){draft.text=(committed+' '+r.text).trim();});
+        d.onFinal(function(r){committed=(committed+' '+r.text).trim();draft.text=committed;});
+        d.onState(function(s){
+          var was=listening; listening=(s.state==='listening');
+          if(was&&!listening) submitVoice(); else render(false);
+        });
+      }).catch(function(){});
+    }catch(e){}
+  }
+  function initArtifact(){
+    try{
+      Promise.resolve(window.claude&&window.claude.use?window.claude.use('artifact'):null).then(function(a){artifactCap=a||null;}).catch(function(){});
+    }catch(e){}
+  }
+
+  // ---- alerte au moment de l'échéance ----
+  var lastDueKey='';
+  function beep(){
+    try{var C=window.AudioContext||window.webkitAudioContext;var c=new C();var o=c.createOscillator();var g=c.createGain();
+      o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.15;o.start();setTimeout(function(){o.stop();c.close()},350);}catch(e){}
+  }
+  function tick(){
+    var due=dueTasks();
+    var key=due.map(function(t){return t.id+':'+t.due}).join(',');
+    var typing=document.activeElement&&document.activeElement.id==='txt';
+    if(key!==lastDueKey){
+      var isNew=due.some(function(t){return lastDueKey.indexOf(t.id+':'+t.due)<0});
+      lastDueKey=key;
+      if(!typing||true){ render(false); }
+      if(isNew){
+        beep();
+        speak('Rappel : '+due[0].text);
+        try{ if('Notification' in window && Notification.permission==='granted') new Notification('Rappel',{body:due[0].text}); }catch(e){}
+        try{ document.title='⏰ '+due[0].text; }catch(e){}
+      }
+      if(!due.length){ try{document.title='Mes rappels';}catch(e){} }
+    } else if(!due.length){
+      // rafraîchit les libellés « à venir / en retard »
+      if(!typing) render(false);
+    }
+  }
+
+  render(false);
+  initArtifact();
+  initDictation();
+  setInterval(tick,15000);
+  tick();
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) tick(); });
+  try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission().catch(function(){}); }catch(e){}
+})();
+</script>
+</body>
+</html>
